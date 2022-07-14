@@ -1,5 +1,4 @@
 ﻿using Cyotek.FixExif;
-using System.Diagnostics;
 
 Exif exif;
 string path;

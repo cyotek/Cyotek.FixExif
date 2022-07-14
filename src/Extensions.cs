@@ -1,13 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Cyotek.FixExif
+﻿namespace Cyotek.FixExif
 {
   internal static class Extensions
   {
+    #region Public Methods
+
     public static string ToExifString(this DateTime value) => value.ToString(Exif.ExifDateFormat);
+
+    #endregion Public Methods
   }
 }
