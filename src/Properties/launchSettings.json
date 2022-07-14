@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "src": {
+      "commandName": "Project",
+      "workingDirectory": "c:\\scans\\"
+    }
+  }
+}
