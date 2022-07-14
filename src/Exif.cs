@@ -16,6 +16,8 @@ namespace Cyotek.FixExif
 
     private static readonly string _exifToolFileName;
 
+    private static char[] _separators = { '\n' };
+
     private readonly Dictionary<string, List<Tuple<CommandType, string>>> _commands;
 
     private string? _fileName;
@@ -25,6 +27,8 @@ namespace Cyotek.FixExif
     private DateTime _lastWriteTimeUtc;
 
     private string? _tagName;
+
+    private Dictionary<string, string> _tags;
 
     private string? _tagValue;
 
@@ -55,13 +59,29 @@ namespace Cyotek.FixExif
 
     public string? TagValue => _tagValue;
 
-    private Dictionary<string, string> _tags;
-
     #endregion Public Properties
 
     #region Public Methods
 
-    private static char[] _separators = { '\n' };
+    public Exif Confirm(string prompt, Action<Exif> action)
+    {
+      ConsoleKeyInfo info;
+
+      Console.WriteLine(prompt);
+
+      do
+      {
+        info = Console.ReadKey(true);
+      } while (info.Key != ConsoleKey.Y && info.Key != ConsoleKey.N);
+
+      if (info.Key == ConsoleKey.Y)
+      {
+        action(this);
+      }
+
+      return this;
+    }
+
     public Exif GetTagValue(string tagName)
     {
       _tagName = tagName;
@@ -149,7 +169,7 @@ namespace Cyotek.FixExif
       return this;
     }
 
-    public void Preview()
+    public Exif Preview()
     {
       foreach (KeyValuePair<string, List<Tuple<CommandType, string>>> pair in _commands)
       {
@@ -163,6 +183,8 @@ namespace Cyotek.FixExif
           Console.WriteLine("\t{0}: {1}", command.Item1, command.Item2);
         }
       }
+
+      return this;
     }
 
     public Exif SaveChanges()

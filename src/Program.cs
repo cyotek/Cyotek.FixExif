@@ -1,4 +1,5 @@
 ﻿using Cyotek.FixExif;
+using System.Diagnostics;
 
 Exif exif;
 string path;
@@ -43,4 +44,7 @@ foreach (string mask in masks)
   }
 }
 
-exif.Preview();
+exif
+  .Preview()
+  .Confirm("Save changes?", x => x.SaveChanges())
+  ;
