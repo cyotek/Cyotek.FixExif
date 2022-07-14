@@ -201,7 +201,17 @@ namespace Cyotek.FixExif
 
           foreach (Tuple<CommandType, string> command in pair.Value)
           {
-            Console.WriteLine("\t{0}: {1}", command.Item1, command.Item2);
+            switch (command.Item1)
+            {
+              case CommandType.ExifTool:
+                Console.WriteLine(this.Run(string.Format("{0} \"{1}\"", command.Item2, pair.Key)));
+                break;
+              case CommandType.SetLastWriteTimeUtc:
+                File.SetLastWriteTimeUtc(pair.Key, DateTime.FromBinary(long.Parse(command.Item2)));
+                break;
+              default:
+                throw new ArgumentOutOfRangeException();
+            }
           }
         }
 
