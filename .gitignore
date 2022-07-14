@@ -1,0 +1,7 @@
+.vs/
+bin/
+obj/
+
+*.suo
+*.user
+/src/exiftool.exe
