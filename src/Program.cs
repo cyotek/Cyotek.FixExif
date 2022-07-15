@@ -1,12 +1,15 @@
 ﻿using Cyotek.FixExif;
 
-Exif exif;
 string path;
 string[] masks;
+Exif exif;
 
-exif = new Exif();
 path = Environment.CurrentDirectory;
 masks = new[] { "*.jpg", "*.tif" };
+
+exif = new Exif()
+//  .Verbose()
+  ;
 
 foreach (string mask in masks)
 {
@@ -34,7 +37,7 @@ foreach (string mask in masks)
       .GetTagValue("Artist")
       .IfMissingReplaceWith("Richard James Moss")
       .GetTagValue("Copyright")
-      .IfMissingReplaceWith(x => string.Format("Copyright (c) {0} Richard James Moss", x.DateFileModified.Year))
+      .ReplaceWith(x => string.Format("Copyright (c) {0} Richard James Moss. All Rights Reserved.", x.DateFileModified.Year))
       // add missing software
       .GetTagValue("Software")
       .IfMissingReplaceWith("Cyotek QuickScan v1.0.0.0")
@@ -46,4 +49,5 @@ foreach (string mask in masks)
 exif
   .Preview()
   .Confirm("Save changes?", x => x.SaveChanges())
+  .Dispose()
   ;
