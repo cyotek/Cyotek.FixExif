@@ -9,6 +9,7 @@ masks = new[] { "*.jpg", "*.tif" };
 
 exif = new Exif()
 //  .Verbose()
+  .OverwriteWithoutBackup() // you are running this on a copy of the data, right...
   ;
 
 foreach (string mask in masks)

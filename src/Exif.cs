@@ -34,6 +34,8 @@ namespace Cyotek.FixExif
 
     private DateTime _lastWriteTimeUtc;
 
+    private bool _overwriteWithoutBackup;
+
     private string? _tagName;
 
     private Dictionary<string, string> _tags;
@@ -184,6 +186,13 @@ namespace Cyotek.FixExif
 
         this.WriteOutput(string.Format("Applying missing value {0}", _tagValue));
       }
+
+      return this;
+    }
+
+    public Exif OverwriteWithoutBackup()
+    {
+      _overwriteWithoutBackup = true;
 
       return this;
     }
@@ -353,9 +362,23 @@ namespace Cyotek.FixExif
 
     private void AddSetCommand(string fileName, string tagName, string tagValue)
     {
+      List<string> commands;
+
       _hasFileChanged = true;
 
-      this.AddCommand(fileName, Tuple.Create(CommandType.ExifTool, new[] { fileName, string.Format("-{0}={1}", tagName, tagValue) }));
+      commands = new List<string>
+      {
+        fileName
+      };
+
+      if (_overwriteWithoutBackup)
+      {
+        commands.Add("-overwrite_original_in_place");
+      }
+
+      commands.Add(string.Format("-{0}={1}", tagName, tagValue));
+
+      this.AddCommand(fileName, Tuple.Create(CommandType.ExifTool, commands.ToArray()));
     }
 
     private void MergeCommands(List<Tuple<CommandType, string[]>> commands)
