@@ -120,32 +120,7 @@ namespace Cyotek.FixExif
 
       if (_tags.Count == 0)
       {
-        string output;
-
-        this.WriteOutput("Reading tags");
-
-        output = this.Run(new[] { "-S", _fileName! });
-
-        if (!string.IsNullOrWhiteSpace(output))
-        {
-          string[] lines;
-
-          lines = output.Split(_separators, StringSplitOptions.RemoveEmptyEntries);
-
-          for (int i = 0; i < lines.Length; i++)
-          {
-            string line;
-            int index;
-
-            line = lines[i];
-            index = line.IndexOf(':');
-
-            if (index != -1)
-            {
-              _tags.Add(line.Substring(0, index).Trim(), line.Substring(index + 1).Trim());
-            }
-          }
-        }
+        this.ReadTags();
       }
 
       _tags.TryGetValue(tagName, out _tagValue);
@@ -223,6 +198,38 @@ namespace Cyotek.FixExif
           foreach (string line in command.Item2)
           {
             Console.WriteLine("\t{0}", line);
+          }
+        }
+      }
+
+      return this;
+    }
+
+    public Exif ReadTags()
+    {
+      string output;
+
+      this.WriteOutput("Reading tags");
+
+      output = this.Run(new[] { "-S", "-fast2", _fileName! });
+
+      if (!string.IsNullOrWhiteSpace(output))
+      {
+        string[] lines;
+
+        lines = output.Split(_separators, StringSplitOptions.RemoveEmptyEntries);
+
+        for (int i = 0; i < lines.Length; i++)
+        {
+          string line;
+          int index;
+
+          line = lines[i];
+          index = line.IndexOf(':');
+
+          if (index != -1)
+          {
+            _tags.Add(line.Substring(0, index).Trim(), line.Substring(index + 1).Trim());
           }
         }
       }
