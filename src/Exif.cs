@@ -218,7 +218,12 @@ namespace Cyotek.FixExif
 
         foreach (Tuple<CommandType, string[]> command in pair.Value)
         {
-          Console.WriteLine("\t{0}: {1}", command.Item1, string.Join(" ", command.Item2));
+          Console.WriteLine(command.Item1);
+
+          foreach (string line in command.Item2)
+          {
+            Console.WriteLine("\t{0}", line);
+          }
         }
       }
 
