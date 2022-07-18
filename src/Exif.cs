@@ -241,11 +241,18 @@ namespace Cyotek.FixExif
 
     public Exif ReplaceWith(Func<Exif, string> getValue)
     {
-      _tagValue = getValue(this);
+      string newValue;
 
-      this.AddSetCommand(_fileName!, _tagName!, _tagValue);
+      newValue = getValue(this);
 
-      this.WriteOutput(string.Format("Applying tag value {0}", _tagValue));
+      if (!string.Equals(_tagValue, newValue))
+      {
+        _tagValue = newValue;
+
+        this.AddSetCommand(_fileName!, _tagName!, _tagValue);
+
+        this.WriteOutput(string.Format("Applying tag value {0}", _tagValue));
+      }
 
       return this;
     }
