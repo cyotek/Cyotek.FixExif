@@ -116,8 +116,11 @@ list of actions is known, there's no reason to keep ExifTool in
 memory - I could shut it down, write out the actions to an
 arguments file and then pass it to ExifTool to process, without
 then needing to wait for confirmation of each command being
-processed. Something I'll definitely look into if I need to
-update (or run) this tool again.
+processed. ~~Something I'll definitely look into if I need to
+update (or run) this tool again.~~ Update: I did change the save
+loop to still use a parameter file, but a fixed one. This has
+resolved the stalling, with the side effect that you don't see
+progress while it works. A fair trade, for now.
 
 The original version of the code wrote the arguments into a
 temporary file, but for debugging purposes I changed that to be
