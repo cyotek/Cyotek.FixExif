@@ -294,6 +294,18 @@ namespace Cyotek.FixExif
       return this;
     }
 
+    public Exif SetTagValue(string name, string value)
+    {
+      _tagName = name;
+      _tagValue = value;
+
+      this.AddSetCommand(_fileName!, _tagName, _tagValue);
+
+      this.WriteOutput(string.Format("Applying value {1} to {0}", _tagName, _tagValue));
+
+      return this;
+    }
+
     public Exif StartExifTool()
     {
       // keep open derived from example on exiftool forums
