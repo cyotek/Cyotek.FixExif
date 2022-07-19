@@ -75,17 +75,20 @@ namespace Cyotek.FixExif
 
     #region Public Methods
 
-    public Exif CloseExiftool()
+    public Exif CloseExifTool()
     {
       if (_isExiftoolRunning)
       {
         this.Run(_exitArguments);
+
+        _isExiftoolRunning = false;
       }
 
       if (!string.IsNullOrWhiteSpace(_argumentsFile) && File.Exists(_argumentsFile))
       {
         File.Delete(_argumentsFile);
       }
+
       return this;
     }
 
@@ -110,7 +113,7 @@ namespace Cyotek.FixExif
 
     public void Dispose()
     {
-      this.CloseExiftool();
+      this.CloseExifTool();
     }
 
     public Exif GetTagValue(string tagName)
@@ -189,7 +192,7 @@ namespace Cyotek.FixExif
         Console.Write(pair.Key);
         Console.WriteLine(':');
 
-        this.MergeCommands(pair.Value);
+        this.MergeCommands(pair.Key, pair.Value);
 
         foreach (Tuple<CommandType, string[]> command in pair.Value)
         {
@@ -261,30 +264,52 @@ namespace Cyotek.FixExif
     {
       if (_commands.Count > 0)
       {
+        Dictionary<string, DateTime> fileUpdates;
+
         this.WriteOutput("Saving changes");
 
-        foreach (KeyValuePair<string, List<Tuple<CommandType, string[]>>> pair in _commands)
+        this.CloseExifTool();
+
+        fileUpdates = new Dictionary<string, DateTime>();
+
+        using (TemporaryFile workFile = new TemporaryFile())
         {
-          Console.Write(pair.Key);
-
-          this.MergeCommands(pair.Value);
-
-          foreach (Tuple<CommandType, string[]> command in pair.Value)
+          using (TextWriter writer = new StreamWriter(workFile.FileName))
           {
-            switch (command.Item1)
+            foreach (KeyValuePair<string, List<Tuple<CommandType, string[]>>> pair in _commands)
             {
-              case CommandType.ExifTool:
-                Console.WriteLine(this.Run(command.Item2));
-                break;
+              Console.Write(pair.Key);
 
-              case CommandType.SetLastWriteTimeUtc:
-                File.SetLastWriteTimeUtc(pair.Key, DateTime.FromBinary(long.Parse(command.Item2[0])));
-                break;
+              this.MergeCommands(pair.Key, pair.Value);
 
-              default:
-                throw new ArgumentOutOfRangeException();
+              foreach (Tuple<CommandType, string[]> command in pair.Value)
+              {
+                switch (command.Item1)
+                {
+                  case CommandType.ExifTool:
+                    for (int i = 0; i < command.Item2.Length; i++)
+                    {
+                      writer.WriteLine(command.Item2[i]);
+                    }
+                    break;
+
+                  case CommandType.SetLastWriteTimeUtc:
+                    fileUpdates.Add(pair.Key, DateTime.FromBinary(long.Parse(command.Item2[0])));
+                    break;
+
+                  default:
+                    throw new ArgumentOutOfRangeException();
+                }
+              }
             }
           }
+
+          Console.WriteLine(this.RunStandalone(string.Format("-@ \"{0}\"", workFile.FileName)));
+        }
+
+        foreach (KeyValuePair<string, DateTime> pair in fileUpdates)
+        {
+          File.SetLastWriteTimeUtc(pair.Key, pair.Value);
         }
 
         _hasFileChanged = false;
@@ -412,7 +437,7 @@ namespace Cyotek.FixExif
       this.AddCommand(fileName, Tuple.Create(CommandType.ExifTool, commands.ToArray()));
     }
 
-    private void MergeCommands(List<Tuple<CommandType, string[]>> commands)
+    private void MergeCommands(string fileName, List<Tuple<CommandType, string[]>> commands)
     {
       string? timestamp;
       List<string> arguments;
@@ -425,7 +450,17 @@ namespace Cyotek.FixExif
         switch (command.Item1)
         {
           case CommandType.ExifTool:
-            arguments.AddRange(command.Item2);
+            for (int i = 0; i < command.Item2.Length; i++)
+            {
+              string arg;
+
+              arg = command.Item2[i];
+
+              if (arg != fileName && arg != "-execute" && !arguments.Contains(arg))
+              {
+                arguments.Add(arg);
+              }
+            }
             break;
 
           case CommandType.SetLastWriteTimeUtc:
@@ -436,6 +471,9 @@ namespace Cyotek.FixExif
             throw new ArgumentOutOfRangeException();
         }
       }
+
+      arguments.Add(fileName);
+      arguments.Add("-execute"); // very important, otherwise if you run as a batch the last tag assignments will be used for all files
 
       commands.Clear();
       commands.Add(Tuple.Create(CommandType.ExifTool, arguments.ToArray()));
@@ -480,14 +518,32 @@ namespace Cyotek.FixExif
       {
         line = _exiftoolProcess.StandardOutput.ReadLine();
 
-        if (!string.IsNullOrWhiteSpace(line))
-        {
-          sb.AppendLine(line);
-        }
+        sb.AppendLine(line);
       }
-      while (!_exiftoolProcess.HasExited && (string.IsNullOrWhiteSpace(line) || !line.Contains("{ready}")));
+      while (!_exiftoolProcess.HasExited && (string.IsNullOrWhiteSpace(line) || !line.Contains("{ready}", StringComparison.OrdinalIgnoreCase)));
 
       return sb.ToString();
+    }
+
+    private string RunStandalone(string arguments)
+    {
+      Process process;
+
+      process = new Process
+      {
+        StartInfo =
+        {
+          FileName = _exifToolFileName,
+          Arguments = arguments,
+          CreateNoWindow = true,
+          RedirectStandardOutput = true,
+          UseShellExecute = false
+        }
+      };
+
+      process.Start();
+
+      return process.StandardOutput.ReadToEnd();
     }
 
     private void WriteAndExecuteArguments(string[] arguments)
